@@ -11,30 +11,49 @@
 #include <string.h>
 #include <time.h>
 
+
 char *read_file(int len, char *filename);
+char * make_rand_key(int length, char *key);
 void write_file(int len, char *filename, char *output);
+void encryptF(char *clear_file, char *key_file, char *cipher_file);
+void decryptF(char *key_file, char *cipher_file, char *message_file);
+
 
 int main(int argc, const char * argv[]) {
-    
-    
-    //need srand, using rand function
-    //int arr[5];
-    //before you call rand, must seed random generator
-//    srand(time(NULL)); //seeds data so it's not the same as before, will need this for generating random key
-//    arr[0] = rand() % 255;
-//    arr[1] = rand() % 255;
-//    arr[2] = rand() % 255;
-//    arr[3] = rand() % 255;
-//    arr[4] = rand() % 255;
-//    int i = 0;
-//    for(i = 0; i < 5; i++){
-//        printf("i= %d\n", arr[i]);
-//    }
-    
-    //char * input = read_file(0, "/Users/dilloncoffman/Desktop/Fall_2017/myfile.txt");
-    write_file(0, "/Users/dilloncoffman/Desktop/tmp/test2.txt", "Woahh\n");
-    read_file(0, "/Users/dilloncoffman/Desktop/tmp/test.txt");
-    
+    // int for user's choice
+    int choice = 0;
+    // Loop until choice == 4
+    while(choice != 4){
+        printf("Menu\n");
+        printf("Encrypt a file: 1\n");
+        printf("Decrypt a file: 2\n");
+        printf("Exit: 3\n");
+        // Prompts user to select a choice from above list
+        printf("Enter a choice: ");
+        //gets the choice from user
+        scanf("%d", &choice);
+        switch (choice){
+            case 1: // choice 1
+                printf("You chose to encrypt.\n");
+                encryptF("/Users/dilloncoffman/Desktop/tmp/test.txt", "/Users/dilloncoffman/Desktop/tmp/key.txt",
+                         "/Users/dilloncoffman/Desktop/tmp/cipher.txt");
+                printf("Performing encryption...\n\n");
+                break;
+            case 2: // choice 2
+                decryptF("/Users/dilloncoffman/Desktop/tmp/key.txt", "/Users/dilloncoffman/Desktop/tmp/cipher.txt",
+                         "/Users/dilloncoffman/Desktop/tmp/message.txt");
+                printf("You chose to decrypt.\n");
+                printf("Performing decryption...\n\n");
+                break;
+            case 3: // choice 3
+                printf("Exiting...\n\n");
+                exit(51);
+                break;
+            default: // default prompts user to enter a valid choice
+                printf("Please enter a valid choice.\n\n");
+                break;
+        }
+    }
     return 0;
 }
 
@@ -46,45 +65,44 @@ char *read_file(int len, char *filename){
     }
     
     if(len == 0){ //if length is 0, count length of file
-//    int count = 0; //define a count to keep track of length of file, don't need for second part
         while(getc(ptrFile) != EOF){ //go through file until EOF read
             len++; //increment the size of file for each char read
         }
-        rewind(ptrFile);
+        rewind(ptrFile); //rewind to beginning of file
     }
     
-    //mqlloc is in the stack, not heap
     char *string = (char*) malloc(len+1); //allocate memory for string input, plus one for null
     int j = 0;
     for(j = 0; j < len; j++){
         string[j] = getc(ptrFile);
         
     }
-    string[j] = '\0';
+    string[j] = '\0'; //puts null at end of string
     
     if(string == NULL){ //if there is no string to read
         fputs("No stringg to read.\n", stderr); //show error
         return NULL; //return nothing
     }
     
-    printf("%s", string);
+    printf("%s\n", string); //prints the string that was read in
     
     fclose(ptrFile); //closes the file
     free(string); //frees the memory
-    return string; //returns the string read to a file
+    return string; //returns the string read from file
 }
 
 void write_file(int len, char *filename, char *output){
-    FILE *ptrFile = fopen(filename, "w"); //open file for reading
+    FILE *ptrFile = fopen(filename, "w"); //open file for writing
     if(ptrFile == NULL){
         printf("Error: File not opened.\n");
         exit(3);
     }
     
     int j = 0;
-    if(len == 0){
-        while(output[j] != '\0')
+    if(len == 0){ //if length is 0
+        while(output[j] != '\0'){
               putc(output[j++], ptrFile);
+        }
     } else {
         for(j=0; j < len; j++){
             putc(output[j], ptrFile);
@@ -97,9 +115,81 @@ void write_file(int len, char *filename, char *output){
 
 
 
-//char *make_rand_key(int length, int *string){
-//    
-//    return string;
-//}
+char * make_rand_key(int length, char *key){
 
+    key = (char*) malloc(length+1); //allocate memory for key, based off length of string
+    time_t t = 0;
+    
+    
+    int i = 0;
+    for( i = 0; i < length; i++){
+        srand((char)time(&t)); //seed the random generator
+        key[i] = (char)rand() % 255; //input a random char into key
+        if(key[i] == EOF){ //if EOF, make the value -2
+            key[i] = EOF - 1;
+        }
+        if(key[i] == 0){ //if null, make it 1
+            key[i] = 1;
+        }
+    }
+    key[i] = '\0'; //add null at end
+    
+    return key;
+}
 
+void encryptF(char *clear_file, char *key_file, char *cipher_file){
+    int length = 0;
+    FILE *ptrk = fopen(key_file, "w");
+    FILE *ptrc = fopen(clear_file, "r");
+    
+    
+    char *input = read_file(length, clear_file);
+    while(input[length]!='\0'){
+        length++;
+        printf("%i\n", length); //just to check have proper length
+    }
+    char * key = make_rand_key(length, input); //assign random key value to key
+    char *cipher = (char*) malloc(length+1); //allocate memory for cipher
+    
+    write_file(length, key_file, key); //write the key to file
+    
+    for(int i = 0; i < length; i++){ //go through clear file and key file, exclusive or'ing each byte to be put into cipher
+        cipher[i] = getc(ptrk) ^ getc(ptrc);
+    }
+    write_file(length, cipher_file, cipher); //write the cipher to file
+    fclose(ptrk); //close both files
+    fclose(ptrc);
+    free(cipher); //free cipher from memory
+}
+
+void decryptF(char *key_file, char *cipher_file, char *message_file){
+    int length = 0;
+    FILE *ptrk = fopen(key_file, "r"); //open all files necessary for decrypting
+    FILE *ptrc = fopen(cipher_file, "r");
+    FILE *ptrm = fopen(message_file, "w");
+    
+    char *key = read_file(length, key_file); //read key file
+    char *cipher = read_file(length, cipher_file); //read cipher file
+    char *message = (char*) malloc(length+1); //allocate memory for the decrypted message
+
+    
+    while(key[length]!='\0'){ //get length of key file
+        length++;
+        printf("%i\n", length); //print to length to check if correct
+    }
+    
+    while(cipher[length] != '\0'){ //print length to check if correct
+        length++;
+        printf("%i\n", length);
+    }
+    
+    for(int i = 0; i < length; i++){ //go through key file and cipher file, exclusive or'ing each byte to be stored in message
+        message[i] = getc(ptrk) ^ getc(ptrc);
+    }
+    
+    write_file(length, message_file, message); //write the decrypted message to file
+    fclose(ptrm); //close all files
+    fclose(ptrk);
+    fclose(ptrc);
+    free(message); //free message
+}
