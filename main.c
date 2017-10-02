@@ -13,11 +13,10 @@
 
 
 char *read_file(int len, char *filename);
-char * make_rand_key(int length, char *key);
+void make_rand_key(int length, char *key);
 void write_file(int len, char *filename, char *output);
 void encryptF(char *clear_file, char *key_file, char *cipher_file);
 void decryptF(char *key_file, char *cipher_file, char *message_file);
-
 
 int main(int argc, const char * argv[]) {
     // int for user's choice
@@ -34,16 +33,15 @@ int main(int argc, const char * argv[]) {
         scanf("%d", &choice);
         switch (choice){
             case 1: // choice 1
-                printf("You chose to encrypt.\n");
-                encryptF("/Users/dilloncoffman/Desktop/tmp/test.txt", "/Users/dilloncoffman/Desktop/tmp/key.txt",
-                         "/Users/dilloncoffman/Desktop/tmp/cipher.txt");
-                printf("Performing encryption...\n\n");
+                printf("You chose to encrypt this message: ");
+                encryptF("/Users/dilloncoffman/Desktop/tmp/test.txt", "/Users/dilloncoffman/Desktop/tmp/key1.txt",
+                         "/Users/dilloncoffman/Desktop/tmp/cipher1.txt");
+                printf("Successfully encrypted your message.\n\n");
                 break;
             case 2: // choice 2
-                decryptF("/Users/dilloncoffman/Desktop/tmp/key.txt", "/Users/dilloncoffman/Desktop/tmp/cipher.txt",
-                         "/Users/dilloncoffman/Desktop/tmp/message.txt");
-                printf("You chose to decrypt.\n");
-                printf("Performing decryption...\n\n");
+                printf("You chose to decrypt and your decrypted message is: ");
+                decryptF("/Users/dilloncoffman/Desktop/tmp/key1.txt", "/Users/dilloncoffman/Desktop/tmp/cipher1.txt",
+                         "/Users/dilloncoffman/Desktop/tmp/message1.txt");
                 break;
             case 3: // choice 3
                 printf("Exiting...\n\n");
@@ -84,10 +82,10 @@ char *read_file(int len, char *filename){
         return NULL; //return nothing
     }
     
-    printf("%s\n", string); //prints the string that was read in
+    //printf("%s\n", string); //prints the string that was read in
     
     fclose(ptrFile); //closes the file
-    free(string); //frees the memory
+    free(string); //frees the memory to be used elsewhere
     return string; //returns the string read from file
 }
 
@@ -115,16 +113,13 @@ void write_file(int len, char *filename, char *output){
 
 
 
-char * make_rand_key(int length, char *key){
-
-    key = (char*) malloc(length+1); //allocate memory for key, based off length of string
-    time_t t = 0;
+void make_rand_key(int length, char *key){
     
+    srand((char)time(NULL)); //seed the random generator
     
     int i = 0;
-    for( i = 0; i < length; i++){
-        srand((char)time(&t)); //seed the random generator
-        key[i] = (char)rand() % 255; //input a random char into key
+    for(i = 0; i < length; i++){
+        key[i] = (char)rand() % 256; //input a random char into key
         if(key[i] == EOF){ //if EOF, make the value -2
             key[i] = EOF - 1;
         }
@@ -134,7 +129,7 @@ char * make_rand_key(int length, char *key){
     }
     key[i] = '\0'; //add null at end
     
-    return key;
+    return;
 }
 
 void encryptF(char *clear_file, char *key_file, char *cipher_file){
@@ -144,22 +139,27 @@ void encryptF(char *clear_file, char *key_file, char *cipher_file){
     
     
     char *input = read_file(length, clear_file);
-    while(input[length]!='\0'){
-        length++;
-        printf("%i\n", length); //just to check have proper length
-    }
-    char * key = make_rand_key(length, input); //assign random key value to key
-    char *cipher = (char*) malloc(length+1); //allocate memory for cipher
+    printf("%s\n", input);
+    length = (int)strlen(input);
+    char key[length+1];
+    char cipher[length+1];
+    
+    make_rand_key(length, key);
+    
+    //printf("key = \n%s\nlength = %d\n", key, (int)strlen(key));
     
     write_file(length, key_file, key); //write the key to file
     
     for(int i = 0; i < length; i++){ //go through clear file and key file, exclusive or'ing each byte to be put into cipher
-        cipher[i] = getc(ptrk) ^ getc(ptrc);
+        cipher[i] = input[i] ^ key[i];
+       // printf("0x%2.2x 0x%2.2x 0x%2.2x\n", cipher[i], input[i], key[i]);
     }
+    printf("\n");
+    cipher[length] = '\0';
+    
     write_file(length, cipher_file, cipher); //write the cipher to file
     fclose(ptrk); //close both files
     fclose(ptrc);
-    free(cipher); //free cipher from memory
 }
 
 void decryptF(char *key_file, char *cipher_file, char *message_file){
@@ -169,27 +169,21 @@ void decryptF(char *key_file, char *cipher_file, char *message_file){
     FILE *ptrm = fopen(message_file, "w");
     
     char *key = read_file(length, key_file); //read key file
+    length = (int) strlen(key);
     char *cipher = read_file(length, cipher_file); //read cipher file
-    char *message = (char*) malloc(length+1); //allocate memory for the decrypted message
-
+    char message[length+1]; //clear out size for char array message
     
-    while(key[length]!='\0'){ //get length of key file
-        length++;
-        printf("%i\n", length); //print to length to check if correct
-    }
-    
-    while(cipher[length] != '\0'){ //print length to check if correct
-        length++;
-        printf("%i\n", length);
-    }
+    //char cipher[] = "Woahh"; //the cipher WAS THE INPUT
     
     for(int i = 0; i < length; i++){ //go through key file and cipher file, exclusive or'ing each byte to be stored in message
-        message[i] = getc(ptrk) ^ getc(ptrc);
+        message[i] = key[i] ^ cipher[i];
+        //printf("0x%2.2x 0x%2.2x 0x%2.2x\n", message[i], key[i], cipher[i]);
     }
+    printf("%s\n\n", message);
     
     write_file(length, message_file, message); //write the decrypted message to file
     fclose(ptrm); //close all files
     fclose(ptrk);
     fclose(ptrc);
-    free(message); //free message
+    //I free all strings returned from read_file in read_file itself
 }
