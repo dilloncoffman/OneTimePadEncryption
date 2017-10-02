@@ -82,8 +82,6 @@ char *read_file(int len, char *filename){
         return NULL; //return nothing
     }
     
-    //printf("%s\n", string); //prints the string that was read in
-    
     fclose(ptrFile); //closes the file
     free(string); //frees the memory to be used elsewhere
     return string; //returns the string read from file
@@ -146,13 +144,10 @@ void encryptF(char *clear_file, char *key_file, char *cipher_file){
     
     make_rand_key(length, key);
     
-    //printf("key = \n%s\nlength = %d\n", key, (int)strlen(key));
-    
     write_file(length, key_file, key); //write the key to file
     
     for(int i = 0; i < length; i++){ //go through clear file and key file, exclusive or'ing each byte to be put into cipher
         cipher[i] = input[i] ^ key[i];
-       // printf("0x%2.2x 0x%2.2x 0x%2.2x\n", cipher[i], input[i], key[i]);
     }
     printf("\n");
     cipher[length] = '\0';
@@ -173,11 +168,8 @@ void decryptF(char *key_file, char *cipher_file, char *message_file){
     char *cipher = read_file(length, cipher_file); //read cipher file
     char message[length+1]; //clear out size for char array message
     
-    //char cipher[] = "Woahh"; //the cipher WAS THE INPUT
-    
     for(int i = 0; i < length; i++){ //go through key file and cipher file, exclusive or'ing each byte to be stored in message
         message[i] = key[i] ^ cipher[i];
-        //printf("0x%2.2x 0x%2.2x 0x%2.2x\n", message[i], key[i], cipher[i]);
     }
     printf("%s\n\n", message);
     
